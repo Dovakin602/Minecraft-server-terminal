@@ -2,6 +2,7 @@
 import sys
 import os
 import Server
+from tkinter import messagebox
 
 class Server_Manager:
     def __init__(self):
@@ -48,16 +49,30 @@ class Server_Manager:
     def start_server(self, name):
         server = self.find_server(name)
         velocity = self.find_server("Velocity")
-        if velocity is not None:
-            if name == "Velocity" or velocity.get_status() == "running":
+        if server.get_status()!="running":
+            if velocity is not None:
+                if name == "Velocity" or velocity.get_status() == "running":
+                    server.start()
+                else:
+                    messagebox.showwarning("warning", "please start velocity first")
+            else:
                 server.start()
-
+        else:
+            messagebox.showwarning("warning", "this server already running")
 
     def stop_server(self, name):
         instance = self.find_server(name)
         if instance.get_status() != "closed":
             instance.stop()
+        else:
+            messagebox.showwarning("warning", "this server already closed")
 
     def open_terminal(self, name):
         instance = self.find_server(name)
         instance.open_terminal()
+
+    def full_shutdown(self):
+        if messagebox.askyesno("Confirm", "Are you sure you want to shutdown?"):
+            for server in self.__Servers:
+                server.stop()
+

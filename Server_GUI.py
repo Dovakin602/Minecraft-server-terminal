@@ -6,13 +6,15 @@ from tkinter import ttk
 from tkinter import messagebox
 from functools import partial
 import Utils
+import Main
 
 
 class Server_GUI:
-    def __init__(self, server_manager):
+    def __init__(self, server_manager, main):
         self.__style = Style(theme='superhero')
         self.__root = self.__style.master
         self.__server_manager = server_manager
+        self.__main = main
         self.config()
 
 
@@ -31,6 +33,8 @@ class Server_GUI:
 
         self.__root.title("server setup")
         self.__root.geometry("700x400")
+
+        self.__root.protocol("WM_DELETE_WINDOW", self.__main.shutdown)
 
 
     def display_ip(self):
