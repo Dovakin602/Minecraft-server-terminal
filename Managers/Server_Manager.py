@@ -36,14 +36,28 @@ class Server_Manager:
             server_names.append(server.get_name())
         return server_names
 
+    def find_server(self, name):
+        for server in self.__Servers:
+            if server.get_name() == name:
+                return server
+        return None
+
     def get_servers(self):
         return self.__Servers
 
-    def start_server(self):
-        return "Server started"
+    def start_server(self, name):
+        server = self.find_server(name)
+        velocity = self.find_server("Velocity")
+        if velocity is not None:
+            if name == "Velocity" or velocity.get_status() == "running":
+                server.start()
 
-    def stop_server(self):
-        return "Server stopped"
 
-    def open_terminal(self):
-        return "Open Terminal"
+    def stop_server(self, name):
+        instance = self.find_server(name)
+        if instance.get_status() != "closed":
+            instance.stop()
+
+    def open_terminal(self, name):
+        instance = self.find_server(name)
+        instance.open_terminal()
