@@ -2,16 +2,20 @@
 import sys
 import Server_GUI
 import Managers.Server_Manager
+import threading
+import time
 
 class main:
     def __init__(self):
         self.__server_manager = Managers.Server_Manager.Server_Manager()
         self.__terminal = Server_GUI.Server_GUI(self.__server_manager, self)
         self.__root = self.__terminal.get_root()
+
+
+        t1 = threading.Thread(target=self.update)
+        t1.start()
+
         self.__root.mainloop()
-
-
-
 
     def shutdown(self):
         self.__server_manager.full_shutdown()
@@ -19,8 +23,11 @@ class main:
         sys.exit()
 
 
-
-
+    def update(self):
+        while True:
+            time.sleep(1)
+            self.__server_manager.check_active_servers()
+            self.__terminal.update_status()
 
 
 

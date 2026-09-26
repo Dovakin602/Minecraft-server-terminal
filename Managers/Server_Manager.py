@@ -9,6 +9,13 @@ class Server_Manager:
         self.__Servers=[]
         self.Find_server_files()
 
+        #resets error counter
+        self.__normal_counter=0
+        #ensures severs arent toggled to incorrect statueses
+        self.__error_counter=0
+
+
+
 
     def Find_server_files(self):
         if getattr(sys, 'frozen', False):
@@ -76,3 +83,16 @@ class Server_Manager:
             for server in self.__Servers:
                 server.stop()
 
+    def check_active_servers(self):
+        self.__normal_counter += 1
+        if self.__normal_counter > 2:
+            self.__normal_counter = 0
+            self.__error_counter = 0
+
+        for instance in self.__Servers:
+            if instance.get_status() == "running":
+                if instance.find_window() == 0:
+                    self.__error_counter += 1
+                    if self.__error_counter > 1:
+                        self.__error_counter = 0
+                        instance.set_status("closed")

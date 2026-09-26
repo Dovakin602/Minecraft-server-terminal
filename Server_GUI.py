@@ -11,6 +11,7 @@ import Main
 
 class Server_GUI:
     def __init__(self, server_manager, main):
+        self.__status_labels={}
         self.__style = Style(theme='superhero')
         self.__root = self.__style.master
         self.__server_manager = server_manager
@@ -26,6 +27,7 @@ class Server_GUI:
     def config(self):
         self.__style.configure('TLabel', background='#050d42')
         self.__style.configure('danger.TLabel', background='#050d42')
+        self.__style.configure('success.TLabel', background='#050d42')
         self.__style.configure('secondary.Inverse.TLabel', background='#050d42')
         self.__style.configure('success.Outline.TButton', background="#31383F")
         self.__style.configure('danger.Outline.TButton', background='#31383F')
@@ -42,6 +44,7 @@ class Server_GUI:
         l.place(x=5, y=0)
 
     def display_servers(self):
+        self.__status_labels = {}
         servers = self.__server_manager.get_servers()
         for i in range(len(servers)):
             frame = ttk.Frame(self.__root, height=43, width=600, style='secondary.Inverse.TLabel')
@@ -69,6 +72,7 @@ class Server_GUI:
             # status lable
             l = ttk.Label(self.__root, text=servers[i].get_status(), style='danger.TLabel')
             l.place(x=475, y=(48 * i) + 50)
+            self.__status_labels[servers[i].get_name()] = l
 
         hight = 49 * (len(servers) + 1)
         string = "600x" + str(hight)
@@ -80,3 +84,11 @@ class Server_GUI:
 
     def get_root(self):
         return self.__root
+
+    def update_status(self):
+        servers = self.__server_manager.get_servers()
+        for server in servers:
+            if server.get_status() == "running":
+                self.__status_labels[server.get_name()].config(text=server.get_status(), style='success.TLabel')
+            elif server.get_status() == "closed":
+                self.__status_labels[server.get_name()].config(text=server.get_status(), style='danger.TLabel')
