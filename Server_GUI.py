@@ -16,9 +16,9 @@ class Server_GUI:
         self.__root = self.__style.master
         self.__server_manager = server_manager
         self.__main = main
+        self.__backup_mode=False
+
         self.config()
-
-
         self.__ipAddr = Utils.get_ip()
 
         self.display()
@@ -61,6 +61,11 @@ class Server_GUI:
                              style='info.Outline.TButton')
             btn.place(x=145, y=(48 * i) + 45)
 
+            btn = ttk.Button(self.__root, text="Backups",
+                             command=partial(self.set_backup_mode, True),
+                             style='info.Outline.TButton')
+            btn.place(x=230, y=(48 * i) + 45)
+
             name = servers[i].get_name()
             if len(name) > 20:
                 name = name[0:10]
@@ -68,7 +73,7 @@ class Server_GUI:
 
             # name label
             l = ttk.Label(self.__root, text=name, style="TLabel")
-            l.place(x=265, y=(48 * i) + 50)
+            l.place(x=365, y=(48 * i) + 50)
             # status lable
             l = ttk.Label(self.__root, text=servers[i].get_status(), style='danger.TLabel')
             l.place(x=475, y=(48 * i) + 50)
@@ -78,12 +83,28 @@ class Server_GUI:
         string = "600x" + str(hight)
         self.__root.geometry(string)
 
+    def display_backups(self):
+        pass
+
     def display(self):
         self.display_ip()
         self.display_servers()
+        if self.__backup_mode:
+            self.display_backups()
+
+    def clear_all(self):
+        # Iterate through every widget inside the frame
+        for widget in self.__root.winfo_children():
+            widget.destroy()  # deleting widget
+
+
 
     def get_root(self):
         return self.__root
+
+    def set_backup_mode(self, backup_mode):
+        self.__backup_mode = backup_mode
+        self.display()
 
     def update_status(self):
         servers = self.__server_manager.get_servers()
