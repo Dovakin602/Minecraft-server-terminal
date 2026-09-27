@@ -16,6 +16,7 @@ class Server:
         self.__file = file
         self.__status = "Closed"
         self.__terminal = None
+        self.__backups=[]
 
     def get_name(self):
         return self.__name
