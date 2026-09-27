@@ -16,6 +16,7 @@ class Server:
         self.__file = file
         self.__status = "Closed"
         self.__terminal = None
+        self.__world_files= []
         self.__backups=[]
 
     def get_name(self):
@@ -87,3 +88,9 @@ class Server:
 
     def set_status(self, status):
         self.__status = status
+
+    def add_world_file(self, world_path):
+        self.__world_files.append(world_path)
+
+    def get_world_files(self):
+        return self.__world_files

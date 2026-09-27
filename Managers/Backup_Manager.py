@@ -5,7 +5,9 @@ import os
 
 
 class Backup_Manager:
-    def __init__(self):
+    def __init__(self, server_manager):
+        self.__server_manager = server_manager
+
         self.find_world_files()
 
     def find_world_files(self):
@@ -22,5 +24,7 @@ class Backup_Manager:
         for root, dirs, files in os.walk(dir_path):
             for file in files:
                 if file == "session.lock":
-                    print(root)
+                    ht = os.path.split(root)
+                    name = os.path.split(ht[0])
+                    self.__server_manager.add_world_file(name[1], root)
 

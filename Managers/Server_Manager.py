@@ -96,3 +96,8 @@ class Server_Manager:
                     if self.__error_counter > 1:
                         self.__error_counter = 0
                         instance.set_status("closed")
+
+
+    def add_world_file(self, name, world_path):
+        server = self.find_server(name)
+        server.add_world_file(world_path)
