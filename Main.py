@@ -34,6 +34,12 @@ class main:
             self.__server_manager.check_active_servers()
             self.__terminal.update_status()
 
+    def get_backup_manager(self):
+        return self.__backup_manager
+
+    def get_server_manager(self):
+        return self.__server_manager
+
 
 
 if __name__ == "__main__":

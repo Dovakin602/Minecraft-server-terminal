@@ -7,6 +7,7 @@ from tkinter import messagebox
 from functools import partial
 import Utils
 import Main
+import Backup_GUI
 
 
 class Server_GUI:
@@ -16,7 +17,6 @@ class Server_GUI:
         self.__root = self.__style.master
         self.__server_manager = server_manager
         self.__main = main
-        self.__backup_mode=False
 
         self.config()
         self.__ipAddr = Utils.get_ip()
@@ -62,7 +62,7 @@ class Server_GUI:
             btn.place(x=145, y=(48 * i) + 45)
 
             btn = ttk.Button(self.__root, text="Backups",
-                             command=partial(self.set_backup_mode, True),
+                             command=partial(self.display_backups, servers[i].get_name()),
                              style='info.Outline.TButton')
             btn.place(x=230, y=(48 * i) + 45)
 
@@ -83,14 +83,13 @@ class Server_GUI:
         string = "600x" + str(hight)
         self.__root.geometry(string)
 
-    def display_backups(self):
-        pass
+    def display_backups(self, name):
+        Backup_GUI.Backup_GUI(self.__server_manager, self.__main.get_backup_manager(), name, self.__root)
 
     def display(self):
         self.display_ip()
         self.display_servers()
-        if self.__backup_mode:
-            self.display_backups()
+
 
     def clear_all(self):
         # Iterate through every widget inside the frame
