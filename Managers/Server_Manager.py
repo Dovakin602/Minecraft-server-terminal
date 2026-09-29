@@ -16,7 +16,6 @@ class Server_Manager:
 
 
 
-
     def Find_server_files(self):
         if getattr(sys, 'frozen', False):
             # Running as an .exe

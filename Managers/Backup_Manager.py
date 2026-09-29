@@ -2,11 +2,14 @@
 
 import sys
 import os
-
+import shutil
 
 class Backup_Manager:
     def __init__(self, server_manager):
         self.__server_manager = server_manager
+        self.__core_backup_path=None
+        self.__metadata_file_path=None
+        self.setup()
 
         self.find_world_files()
 
@@ -26,5 +29,50 @@ class Backup_Manager:
                 if file == "session.lock":
                     ht = os.path.split(root)
                     name = os.path.split(ht[0])
+                    print(name[1])
                     self.__server_manager.add_world_file(name[1], root)
+
+    def setup(self):
+
+        if getattr(sys, 'frozen', False):
+            # Running as an .exe
+            dir_path = os.path.dirname(sys.executable)
+        else:
+            # Running as normal Python
+            dir_path = os.getcwd()
+
+        self.__core_backup_path = os.path.join(dir_path, "Backups")
+        self.__metadata_file_path = os.path.join(self.__core_backup_path, "metadata.json")
+
+
+        try:
+            os.mkdir(self.__core_backup_path)
+            print(f"Directory Backups created successfully.")
+        except FileExistsError:
+            print(f"Directory Backups already exists.")
+        except PermissionError:
+            print(f"Permission denied: Unable to create Backups.")
+        except Exception as e:
+            print(f"An error occurred: {e}")
+
+
+
+    def create_backup(self, paths, name):
+        folder_name = name+"_Backups"
+        backup_path = os.path.join(self.__core_backup_path, folder_name)
+        exists = os.path.exists(backup_path)
+        if not exists:
+            try:
+                os.mkdir(backup_path)
+                print(f"Directory Backups created successfully.")
+            except PermissionError:
+                print(f"Permission denied: Unable to create Backups.")
+            except Exception as e:
+                print(f"An error occurred: {e}")
+        for path in paths:
+            end = os.path.split(path)
+            shutil.copytree(path, str(os.path.join(backup_path, end[1])))
+
+
+
 
