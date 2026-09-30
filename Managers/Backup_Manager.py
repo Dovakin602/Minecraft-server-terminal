@@ -1,8 +1,8 @@
-
-
+import json
 import sys
 import os
 import shutil
+import datetime
 
 class Backup_Manager:
     def __init__(self, server_manager):
@@ -55,6 +55,15 @@ class Backup_Manager:
             print(f"An error occurred: {e}")
 
 
+        exists = os.path.exists(self.__metadata_file_path)
+        if not exists:
+            with open(self.__metadata_file_path, "w") as f:
+                json.dump({}, f)
+                f.close()
+
+
+
+
     def create_backup(self, paths, server_name, backup_name):
         folder_name = server_name+"_Backups"
         sever_backups_path = os.path.join(self.__core_backup_path, folder_name)
@@ -74,6 +83,17 @@ class Backup_Manager:
         for path in paths:
             end = os.path.split(path)
             shutil.copytree(path, str(os.path.join(final_backup_path, end[1])))
+
+        data={
+            "name": backup_name,
+            "server": server_name,
+            "backup_path": final_backup_path,
+            "date_created": datetime.datetime.now().isoformat(),
+        }
+        print(data)
+        with open(self.__metadata_file_path, "w") as f:
+            json.dump(data, f)
+            f.close()
 
 
 
