@@ -58,11 +58,8 @@ class Backup_Manager:
         exists = os.path.exists(self.__metadata_file_path)
         if not exists:
             with open(self.__metadata_file_path, "w") as f:
-                json.dump({}, f)
+                json.dump([], f)
                 f.close()
-
-
-
 
     def create_backup(self, paths, server_name, backup_name):
         folder_name = server_name+"_Backups"
@@ -91,10 +88,28 @@ class Backup_Manager:
             "date_created": datetime.datetime.now().isoformat(),
         }
         print(data)
+        with open(self.__metadata_file_path, "r") as f:
+            original_data = json.load(f)
+            f.close()
+        original_data.append(data)
         with open(self.__metadata_file_path, "w") as f:
-            json.dump(data, f)
+            json.dump(original_data, f)
             f.close()
 
 
+    def load_server_backups_data(self, name):
+        with open(self.__metadata_file_path, "r") as f:
+            data = json.load(f)
+            f.close()
+        print("")
+        print("testing")
+        print(data)
+        print(len(data))
+        print("")
+        backups=[]
+        for backup in data:
+            if backup["server"] == name:
+                backups.append({"name": backup["name"], "backup_path": backup["backup_path"], "date_created": backup["date_created"]})
 
+        return backups
 

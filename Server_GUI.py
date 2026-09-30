@@ -87,6 +87,7 @@ class Server_GUI:
         Backup_GUI.Backup_GUI(self.__server_manager, self.__main.get_backup_manager(), name, self.__root)
 
     def display(self):
+        self.clear_all()
         self.display_ip()
         self.display_servers()
 

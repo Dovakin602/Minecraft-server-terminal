@@ -10,6 +10,7 @@ class Backup_GUI:
         self.__backup_manager = backup_manager
         self.__name = name
         self.__root = root
+        self.__backup_data=backup_manager.load_server_backups_data(name)
 
         self.__style = Style(theme='superhero')
         self.__window = tk.Toplevel(root)
@@ -49,13 +50,48 @@ class Backup_GUI:
                          style='Info.Outline.TButton')
         btn.place(x=400, y=5)
 
+
+    def display_backups(self):
+        if len(self.__backup_data) > 0:
+            for i in range(len(self.__backup_data)):
+                frame = ttk.Frame(self.__window, height=43, width=600, style='secondary.Inverse.TLabel')
+                frame.place(x=0, y=(48 * i) + 38)
+
+                # name label
+                name=self.__backup_data[i]["name"];
+                if len(name) > 20:
+                    name = name[0:10]
+                    name = name + "..."
+                l = ttk.Label(self.__window, text=name, style="TLabel")
+                l.place(x=5, y=(48 * i) + 50)
+
+
+                # date label
+                date = self.__backup_data[i]["date_created"][0:10]
+                l = ttk.Label(self.__window, text=date, style="TLabel")
+                l.place(x=40, y=(48 * i) + 50)
+
     def create_backup(self, paths, server_name):
         self.__backup_manager.create_backup(paths, server_name, self.__name_entry.get())
         self.__text_popup.destroy()
         self.__text_popup_active = False
+        self.update_backups()
 
     def display(self):
+        self.clear_all()
         self.display_header()
+        self.display_backups()
+
+
+    def update_backups(self):
+        self.__backup_data = self.__backup_manager.load_server_backups_data(self.__name)
+        self.display()
+
+    def clear_all(self):
+        # Iterate through every widget inside the frame
+        for widget in self.__window.winfo_children():
+            widget.destroy() # deleting widget
+
 
     def backup_name_popup(self):
         if not self.__text_popup_active:
