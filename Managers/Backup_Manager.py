@@ -26,10 +26,9 @@ class Backup_Manager:
         # and create a server instance for each one
         for root, dirs, files in os.walk(dir_path):
             for file in files:
-                if file == "session.lock":
+                if file == "session.lock" and "Backups" not in root:
                     ht = os.path.split(root)
                     name = os.path.split(ht[0])
-                    print(name[1])
                     self.__server_manager.add_world_file(name[1], root)
 
     def setup(self):
@@ -56,22 +55,25 @@ class Backup_Manager:
             print(f"An error occurred: {e}")
 
 
-
-    def create_backup(self, paths, name):
-        folder_name = name+"_Backups"
-        backup_path = os.path.join(self.__core_backup_path, folder_name)
-        exists = os.path.exists(backup_path)
+    def create_backup(self, paths, server_name, backup_name):
+        folder_name = server_name+"_Backups"
+        sever_backups_path = os.path.join(self.__core_backup_path, folder_name)
+        exists = os.path.exists(sever_backups_path)
         if not exists:
             try:
-                os.mkdir(backup_path)
+                os.mkdir(sever_backups_path)
                 print(f"Directory Backups created successfully.")
             except PermissionError:
                 print(f"Permission denied: Unable to create Backups.")
             except Exception as e:
                 print(f"An error occurred: {e}")
+        final_backup_path = os.path.join(sever_backups_path, backup_name)
+        print(backup_name)
+        print(final_backup_path)
+        os.mkdir(final_backup_path)
         for path in paths:
             end = os.path.split(path)
-            shutil.copytree(path, str(os.path.join(backup_path, end[1])))
+            shutil.copytree(path, str(os.path.join(final_backup_path, end[1])))
 
 
 
