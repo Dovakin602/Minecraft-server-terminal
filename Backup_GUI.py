@@ -71,11 +71,23 @@ class Backup_GUI:
                 l = ttk.Label(self.__window, text=date, style="TLabel")
                 l.place(x=40, y=(48 * i) + 50)
 
+
+
     def create_backup(self, paths, server_name):
-        self.__backup_manager.create_backup(paths, server_name, self.__name_entry.get())
-        self.__text_popup.destroy()
-        self.__text_popup_active = False
-        self.update_backups()
+        error_duplicate_name = False
+        for backup in self.__backup_data:
+            if backup["name"].lower() == self.__name_entry.get().lower():
+                tk.messagebox.showwarning("Warning", "A Backup with this name already exists", master=self.__text_popup)
+                self.__window.attributes('-topmost', True)
+                self.__window.attributes('-topmost', False)
+                self.__text_popup.attributes('-topmost', True)
+                self.__text_popup.attributes('-topmost', False)
+                error_duplicate_name = True
+        if not error_duplicate_name:
+            self.__backup_manager.create_backup(paths, server_name, self.__name_entry.get())
+            self.__text_popup.destroy()
+            self.__text_popup_active = False
+            self.update_backups()
 
     def display(self):
         self.clear_all()
@@ -103,3 +115,8 @@ class Backup_GUI:
             self.__name_entry.place(x=5, y=40)
             btn = tk.Button(self.__text_popup, text="Backup",command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
             btn.place(x=5, y=80)
+            self.__text_popup.protocol("WM_DELETE_WINDOW", self.text_popup_close)
+
+    def text_popup_close(self):
+        self.__text_popup.destroy()
+        self.__text_popup_active = False

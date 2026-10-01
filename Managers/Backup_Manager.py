@@ -11,8 +11,7 @@ class Backup_Manager:
         self.__metadata_file_path=None
         self.setup()
 
-        self.find_world_files()
-
+    #currently redundent
     def find_world_files(self):
         if getattr(sys, 'frozen', False):
             # Running as an .exe

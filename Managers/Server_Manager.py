@@ -36,6 +36,10 @@ class Server_Manager:
                     else:
                         server_instance = Server.Server("Velocity", root, file)
                     self.__Servers.append(server_instance)
+                if file == "session.lock" and "Backups" not in root:
+                    ht = os.path.split(root)
+                    name = os.path.split(ht[0])
+                    self.add_world_file(name[1], root)
 
     def get_server_names(self):
         server_names = []
