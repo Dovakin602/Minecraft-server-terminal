@@ -71,6 +71,18 @@ class Backup_GUI:
                 l = ttk.Label(self.__window, text=date, style="TLabel")
                 l.place(x=40, y=(48 * i) + 50)
 
+                #delete button
+                btn = ttk.Button(self.__window, text="Delete",
+                                 command=partial(self.delete_backup, self.__name, self.__backup_data[i]["name"]),
+                                 style='danger.Outline.TButton')
+                btn.place(x=400, y=(48 * i) + 50)
+
+                # load button
+                btn = ttk.Button(self.__window, text="Load",
+                                 command=partial(self.load_backup, self.__name, self.__backup_data[i]["name"]),
+                                 style='success.Outline.TButton')
+                btn.place(x=300, y=(48 * i) + 50)
+
 
 
     def create_backup(self, paths, server_name):
@@ -88,6 +100,23 @@ class Backup_GUI:
             self.__text_popup.destroy()
             self.__text_popup_active = False
             self.update_backups()
+
+    def delete_backup(self, server_name, backup_name):
+        if tk.messagebox.askyesno("Confirm", "Are you sure you want to delete the backup "+backup_name+"?"):
+            self.__backup_manager.delete_backup(server_name, backup_name)
+            self.update_backups()
+
+            self.__window.attributes('-topmost', True)
+            self.__window.attributes('-topmost', False)
+
+
+    def load_backup(self, server_name, backup_name):
+        if tk.messagebox.askyesno("Confirm", "Are you sure you want to load the backup " + backup_name + "?"):
+            self.__backup_manager.load_backup(server_name, backup_name)
+
+            self.__window.attributes('-topmost', True)
+            self.__window.attributes('-topmost', False)
+
 
     def display(self):
         self.clear_all()

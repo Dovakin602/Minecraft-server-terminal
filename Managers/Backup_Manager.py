@@ -95,16 +95,49 @@ class Backup_Manager:
             json.dump(original_data, f)
             f.close()
 
+    def delete_backup(self, server_name, backup_name):
+        with open(self.__metadata_file_path, "r") as f:
+            data = json.load(f)
+            f.close()
+
+        for i in range(len(data)):
+            if data[i]["name"] == backup_name and data[i]["server"] == server_name:
+                backup = data.pop(i)
+                break
+
+        with open(self.__metadata_file_path, "w") as f:
+            json.dump(data, f)
+            f.close()
+
+        if backup:
+            if os.path.exists(backup["backup_path"]):
+                shutil.rmtree(backup["backup_path"])
+            else:
+                print("The file does not exist")
+
+
+    def load_backup(self, server_name, backup_name):
+        backup = self.find_backup(server_name, backup_name)
+        world_files = self.__server_manager.get_world_files(server_name)
+        backup_files = os.listdir(backup["backup_path"])
+        print(backup_files)
+        for file in world_files:
+            for backup_file in backup_files:
+                ht = os.path.split(file)
+                name = ht[1]
+                if backup_file == name:
+                    shutil.rmtree(file)
+                    shutil.copytree(os.path.join(backup["backup_path"], backup_file), file)
+                    print("loading world file "+name)
+                    break
+
+
+
 
     def load_server_backups_data(self, name):
         with open(self.__metadata_file_path, "r") as f:
             data = json.load(f)
             f.close()
-        print("")
-        print("testing")
-        print(data)
-        print(len(data))
-        print("")
         backups=[]
         for backup in data:
             if backup["server"] == name:
@@ -112,3 +145,12 @@ class Backup_Manager:
 
         return backups
 
+    def find_backup(self, server_name, backup_name):
+        with open(self.__metadata_file_path, "r") as f:
+            data = json.load(f)
+            f.close()
+        for backup in data:
+            if backup["server"] == server_name and backup["name"] == backup_name:
+                return {"name": backup["name"], "backup_path": backup["backup_path"],
+                                "date_created": backup["date_created"]}
+        return None
