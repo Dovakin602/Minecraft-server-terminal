@@ -14,8 +14,6 @@ class Server_Manager:
         #ensures severs arent toggled to incorrect statueses
         self.__error_counter=0
 
-
-
     def Find_server_files(self):
         if getattr(sys, 'frozen', False):
             # Running as an .exe

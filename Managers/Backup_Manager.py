@@ -40,7 +40,7 @@ class Backup_Manager:
             dir_path = os.getcwd()
 
         self.__core_backup_path = os.path.join(dir_path, "Backups")
-        self.__metadata_file_path = os.path.join(self.__core_backup_path, "metadata.json")
+        self.__metadata_file_path = os.path.join(self.__core_backup_path, "core_metadata.json")
 
 
         try:
@@ -60,6 +60,8 @@ class Backup_Manager:
                 json.dump([], f)
                 f.close()
 
+        self.metadata_restoration_check()
+
     def create_backup(self, paths, server_name, backup_name):
         folder_name = server_name+"_Backups"
         sever_backups_path = os.path.join(self.__core_backup_path, folder_name)
@@ -73,12 +75,13 @@ class Backup_Manager:
             except Exception as e:
                 print(f"An error occurred: {e}")
         final_backup_path = os.path.join(sever_backups_path, backup_name)
-        print(backup_name)
-        print(final_backup_path)
         os.mkdir(final_backup_path)
+
+        #copy files over to backup loaction
         for path in paths:
             end = os.path.split(path)
             shutil.copytree(path, str(os.path.join(final_backup_path, end[1])))
+
 
         data={
             "name": backup_name,
@@ -86,14 +89,10 @@ class Backup_Manager:
             "backup_path": final_backup_path,
             "date_created": datetime.datetime.now().isoformat(),
         }
-        print(data)
-        with open(self.__metadata_file_path, "r") as f:
-            original_data = json.load(f)
-            f.close()
-        original_data.append(data)
-        with open(self.__metadata_file_path, "w") as f:
-            json.dump(original_data, f)
-            f.close()
+
+        self.create_sub_metadata(data, final_backup_path)
+
+        self.append_core_metadata(data)
 
     def delete_backup(self, server_name, backup_name):
         with open(self.__metadata_file_path, "r") as f:
@@ -115,7 +114,6 @@ class Backup_Manager:
             else:
                 print("The file does not exist")
 
-
     def load_backup(self, server_name, backup_name):
         backup = self.find_backup(server_name, backup_name)
         world_files = self.__server_manager.get_world_files(server_name)
@@ -130,9 +128,6 @@ class Backup_Manager:
                     shutil.copytree(os.path.join(backup["backup_path"], backup_file), file)
                     print("loading world file "+name)
                     break
-
-
-
 
     def load_server_backups_data(self, name):
         with open(self.__metadata_file_path, "r") as f:
@@ -154,3 +149,81 @@ class Backup_Manager:
                 return {"name": backup["name"], "backup_path": backup["backup_path"],
                                 "date_created": backup["date_created"]}
         return None
+
+    def metadata_restoration_check(self):
+        with open(self.__metadata_file_path, "r") as f:
+            core_data = json.load(f)
+            f.close()
+
+
+        sub_data=[]
+        for root, dirs, files in os.walk(self.__core_backup_path):
+            for file in files:
+                if file == "metadata.json":
+                    with open(os.path.join(root, file), "r") as f:
+                        data = json.load(f)
+                        f.close()
+                    sub_data.append(data)
+
+        if len(sub_data) > len(core_data):
+            loop = len(sub_data)
+        else:
+            loop = len(core_data)
+
+
+        #remove core metadata about files that no longer exist
+        for c in core_data:
+            if not os.path.exists(c["backup_path"]):
+                with open(self.__metadata_file_path, "r") as f:
+                    data = json.load(f)
+                    f.close()
+
+                data.remove(c)
+
+                with open(self.__metadata_file_path, "w") as f:
+                    json.dump(data, f)
+                    f.close()
+
+
+        #check to see if core metadat is missing files
+        for s in sub_data:
+            found=False
+            for c in core_data:
+                if c["name"] == s["name"] and c["server"] == s["server"]:
+                    found = True
+            if not found:
+                print("missing core data")
+                self.append_core_metadata(s)
+
+        #check to find any missing sub metadat files
+        for c in core_data:
+            found=False
+            for s in sub_data:
+                if c["name"] == s["name"] and c["server"] == s["server"]:
+                    found = True
+            if not found:
+                print("missing sub data")
+                if os.path.exists(s["backup_path"]):
+                    self.create_sub_metadata(c, c["backup_path"])
+
+
+
+
+    def append_core_metadata(self, data):
+        # load core metadata file
+        with open(self.__metadata_file_path, "r") as f:
+            original_data = json.load(f)
+            f.close()
+
+        # write back to the core metadata file with the new backups data added
+        original_data.append(data)
+        with open(self.__metadata_file_path, "w") as f:
+            json.dump(original_data, f)
+            f.close()
+
+    def create_sub_metadata(self, data, path):
+        # create the sub metadatafile in final backup path
+        with open(os.path.join(path, "metadata.json"), "w") as f:
+            json.dump(data, f)
+            f.close()
+

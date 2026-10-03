@@ -23,7 +23,6 @@ class Server_GUI:
 
         self.display()
 
-
     def config(self):
         self.__style.configure('TLabel', background='#050d42')
         self.__style.configure('danger.TLabel', background='#050d42')
@@ -37,7 +36,6 @@ class Server_GUI:
         self.__root.geometry("700x400")
 
         self.__root.protocol("WM_DELETE_WINDOW", self.__main.shutdown)
-
 
     def display_ip(self):
         l = ttk.Label(self.__root, text=("ip address: " + self.__ipAddr), font=("Helvetica", 14, "bold"),style='info.Outline.TButton')
@@ -91,13 +89,10 @@ class Server_GUI:
         self.display_ip()
         self.display_servers()
 
-
     def clear_all(self):
         # Iterate through every widget inside the frame
         for widget in self.__root.winfo_children():
             widget.destroy()  # deleting widget
-
-
 
     def get_root(self):
         return self.__root

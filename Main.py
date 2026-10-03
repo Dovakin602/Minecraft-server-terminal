@@ -24,7 +24,6 @@ class main:
         self.__root.destroy()
         sys.exit()
 
-
     def update(self):
         while True:
             time.sleep(1)

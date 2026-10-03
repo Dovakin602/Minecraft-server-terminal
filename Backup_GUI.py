@@ -19,7 +19,6 @@ class Backup_GUI:
         self.config()
         self.display()
 
-
     def config(self):
 
         self.__style.configure('TLabel', background='#050d42')
@@ -49,7 +48,6 @@ class Backup_GUI:
                          command=partial(self.backup_name_popup,),
                          style='Info.Outline.TButton')
         btn.place(x=400, y=5)
-
 
     def display_backups(self):
         if len(self.__backup_data) > 0:
@@ -83,8 +81,6 @@ class Backup_GUI:
                                  style='success.Outline.TButton')
                 btn.place(x=300, y=(48 * i) + 50)
 
-
-
     def create_backup(self, paths, server_name):
         error_duplicate_name = False
         for backup in self.__backup_data:
@@ -109,7 +105,6 @@ class Backup_GUI:
             self.__window.attributes('-topmost', True)
             self.__window.attributes('-topmost', False)
 
-
     def load_backup(self, server_name, backup_name):
         if tk.messagebox.askyesno("Confirm", "Are you sure you want to load the backup " + backup_name + "?"):
             self.__backup_manager.load_backup(server_name, backup_name)
@@ -117,12 +112,10 @@ class Backup_GUI:
             self.__window.attributes('-topmost', True)
             self.__window.attributes('-topmost', False)
 
-
     def display(self):
         self.clear_all()
         self.display_header()
         self.display_backups()
-
 
     def update_backups(self):
         self.__backup_data = self.__backup_manager.load_server_backups_data(self.__name)
@@ -132,7 +125,6 @@ class Backup_GUI:
         # Iterate through every widget inside the frame
         for widget in self.__window.winfo_children():
             widget.destroy() # deleting widget
-
 
     def backup_name_popup(self):
         if not self.__text_popup_active:
