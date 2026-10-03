@@ -102,15 +102,15 @@ class Backup_GUI:
             self.__backup_manager.delete_backup(server_name, backup_name)
             self.update_backups()
 
-            self.__window.attributes('-topmost', True)
-            self.__window.attributes('-topmost', False)
+        self.__window.attributes('-topmost', True)
+        self.__window.attributes('-topmost', False)
 
     def load_backup(self, server_name, backup_name):
         if tk.messagebox.askyesno("Confirm", "Are you sure you want to load the backup " + backup_name + "?"):
             self.__backup_manager.load_backup(server_name, backup_name)
 
-            self.__window.attributes('-topmost', True)
-            self.__window.attributes('-topmost', False)
+        self.__window.attributes('-topmost', True)
+        self.__window.attributes('-topmost', False)
 
     def display(self):
         self.clear_all()
