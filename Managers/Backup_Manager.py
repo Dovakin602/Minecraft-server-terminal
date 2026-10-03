@@ -206,9 +206,6 @@ class Backup_Manager:
                 if os.path.exists(s["backup_path"]):
                     self.create_sub_metadata(c, c["backup_path"])
 
-
-
-
     def append_core_metadata(self, data):
         # load core metadata file
         with open(self.__metadata_file_path, "r") as f:

@@ -83,6 +83,9 @@ class Server_Manager:
         if messagebox.askyesno("Confirm", "Are you sure you want to shutdown?"):
             for server in self.__Servers:
                 server.stop()
+            return True
+        else:
+            return False
 
     def check_active_servers(self):
         self.__normal_counter += 1

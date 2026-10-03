@@ -127,16 +127,19 @@ class Backup_GUI:
             widget.destroy() # deleting widget
 
     def backup_name_popup(self):
-        if not self.__text_popup_active:
-            self.__text_popup_active = True
-            self.__text_popup = tk.Toplevel(self.__window)
-            l = tk.Label(self.__text_popup, text="Enter Backup Name", font=("Helvetica", 14, "bold"), bg='#617ab0')
-            l.place(x=5, y=5)
-            self.__name_entry = ttk.Entry(self.__text_popup)
-            self.__name_entry.place(x=5, y=40)
-            btn = tk.Button(self.__text_popup, text="Backup",command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
-            btn.place(x=5, y=80)
-            self.__text_popup.protocol("WM_DELETE_WINDOW", self.text_popup_close)
+        if self.__server_manager.find_server(self.__name).get_status()=="closed":
+            if not self.__text_popup_active:
+                self.__text_popup_active = True
+                self.__text_popup = tk.Toplevel(self.__window)
+                l = tk.Label(self.__text_popup, text="Enter Backup Name", font=("Helvetica", 14, "bold"), bg='#617ab0')
+                l.place(x=5, y=5)
+                self.__name_entry = ttk.Entry(self.__text_popup)
+                self.__name_entry.place(x=5, y=40)
+                btn = tk.Button(self.__text_popup, text="Backup",command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
+                btn.place(x=5, y=80)
+                self.__text_popup.protocol("WM_DELETE_WINDOW", self.text_popup_close)
+        else:
+            tk.messagebox.showwarning("warning", "unable to create backup's while this server is running")
 
     def text_popup_close(self):
         self.__text_popup.destroy()

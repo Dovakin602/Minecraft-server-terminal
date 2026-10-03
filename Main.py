@@ -20,9 +20,9 @@ class main:
         self.__root.mainloop()
 
     def shutdown(self):
-        self.__server_manager.full_shutdown()
-        self.__root.destroy()
-        sys.exit()
+        if self.__server_manager.full_shutdown():
+            self.__root.destroy()
+            sys.exit()
 
     def update(self):
         while True:

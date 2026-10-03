@@ -82,7 +82,11 @@ class Server_GUI:
         self.__root.geometry(string)
 
     def display_backups(self, name):
-        Backup_GUI.Backup_GUI(self.__server_manager, self.__main.get_backup_manager(), name, self.__root)
+        server = self.__server_manager.find_server(name)
+        if len(server.get_world_files())>0:
+            Backup_GUI.Backup_GUI(self.__server_manager, self.__main.get_backup_manager(), name, self.__root)
+        else:
+            messagebox.showwarning("warning", "This server has no world files to backup")
 
     def display(self):
         self.clear_all()
