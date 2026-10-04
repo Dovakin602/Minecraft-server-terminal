@@ -84,10 +84,10 @@ class Backup_GUI:
                 # copy button
                 btn = ttk.Button(self.__window, text="Copy",
                                  command=partial(self.backup_name_popup, "copy", self.__backup_data[i]),
-                                 style='success.Outline.TButton')
+                                 style='info.Outline.TButton')
                 btn.place(x=325, y=(48 * i) + 50)
 
-    def create_backup(self, paths, server_name):
+    def create_backup(self, paths, server_name, event=None):
         error_duplicate_name = False
         for backup in self.__backup_data:
             if backup["name"].lower() == self.__name_entry.get().lower():
@@ -118,7 +118,7 @@ class Backup_GUI:
         self.__window.attributes('-topmost', True)
         self.__window.attributes('-topmost', False)
 
-    def copy_backup(self, backupvar):
+    def copy_backup(self, backupvar, event=None):
         error_duplicate_name = False
         for backup in self.__backup_data:
             if backup["name"].lower() == self.__name_entry.get().lower():
@@ -158,10 +158,15 @@ class Backup_GUI:
                 l.place(x=5, y=5)
                 self.__name_entry = ttk.Entry(self.__text_popup)
                 self.__name_entry.place(x=5, y=40)
+                self.__name_entry.focus()
+
+
                 if type == "create":
                     btn = tk.Button(self.__text_popup, text="Backup",command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
+                    self.__name_entry.bind("<Return>", partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
                 elif type == "copy":
                     btn = tk.Button(self.__text_popup, text="Copy", command=partial(self.copy_backup, backup))
+                    self.__name_entry.bind("<Return>", partial(self.copy_backup, backup))
                 btn.place(x=5, y=80)
                 self.__text_popup.protocol("WM_DELETE_WINDOW", self.text_popup_close)
         else:
