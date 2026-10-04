@@ -75,7 +75,8 @@ class Backup_Manager:
             except Exception as e:
                 print(f"An error occurred: {e}")
         final_backup_path = os.path.join(sever_backups_path, backup_name)
-        os.mkdir(final_backup_path)
+        if not os.path.exists(final_backup_path):
+            os.mkdir(final_backup_path)
 
         #copy files over to backup loaction
         for path in paths:
@@ -118,7 +119,6 @@ class Backup_Manager:
         backup = self.find_backup(server_name, backup_name)
         world_files = self.__server_manager.get_world_files(server_name)
         backup_files = os.listdir(backup["backup_path"])
-        print(backup_files)
         for file in world_files:
             for backup_file in backup_files:
                 ht = os.path.split(file)
@@ -129,6 +129,14 @@ class Backup_Manager:
                     print("loading world file "+name)
                     break
 
+    def copy_backup(self, backup, backup_name):
+        backup_files = os.listdir(backup["backup_path"])
+        paths=[]
+        for file in backup_files:
+            if file != "metadata.json":
+                paths.append(os.path.join(backup["backup_path"], file))
+        self.create_backup(paths, backup["server"], backup_name)
+
     def load_server_backups_data(self, name):
         with open(self.__metadata_file_path, "r") as f:
             data = json.load(f)
@@ -136,7 +144,7 @@ class Backup_Manager:
         backups=[]
         for backup in data:
             if backup["server"] == name:
-                backups.append({"name": backup["name"], "backup_path": backup["backup_path"], "date_created": backup["date_created"]})
+                backups.append({"name": backup["name"],"server": backup["server"], "backup_path": backup["backup_path"], "date_created": backup["date_created"]})
 
         return backups
 

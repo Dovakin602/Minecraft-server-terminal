@@ -14,7 +14,7 @@ class Server:
         self.__name  = name
         self.__path = path
         self.__file = file
-        self.__status = "Closed"
+        self.__status = "closed"
         self.__terminal = None
         self.__world_files= []
         self.__backups=[]

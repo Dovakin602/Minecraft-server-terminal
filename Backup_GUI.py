@@ -45,7 +45,7 @@ class Backup_GUI:
         l.place(x=5, y=5)
 
         btn = ttk.Button(self.__window, text="Backup",
-                         command=partial(self.backup_name_popup,),
+                         command=partial(self.backup_name_popup, "create"),
                          style='Info.Outline.TButton')
         btn.place(x=400, y=5)
 
@@ -79,7 +79,13 @@ class Backup_GUI:
                 btn = ttk.Button(self.__window, text="Load",
                                  command=partial(self.load_backup, self.__name, self.__backup_data[i]["name"]),
                                  style='success.Outline.TButton')
-                btn.place(x=300, y=(48 * i) + 50)
+                btn.place(x=250, y=(48 * i) + 50)
+
+                # copy button
+                btn = ttk.Button(self.__window, text="Copy",
+                                 command=partial(self.backup_name_popup, "copy", self.__backup_data[i]),
+                                 style='success.Outline.TButton')
+                btn.place(x=325, y=(48 * i) + 50)
 
     def create_backup(self, paths, server_name):
         error_duplicate_name = False
@@ -112,6 +118,22 @@ class Backup_GUI:
         self.__window.attributes('-topmost', True)
         self.__window.attributes('-topmost', False)
 
+    def copy_backup(self, backupvar):
+        error_duplicate_name = False
+        for backup in self.__backup_data:
+            if backup["name"].lower() == self.__name_entry.get().lower():
+                tk.messagebox.showwarning("Warning", "A Backup with this name already exists", master=self.__text_popup)
+                self.__window.attributes('-topmost', True)
+                self.__window.attributes('-topmost', False)
+                self.__text_popup.attributes('-topmost', True)
+                self.__text_popup.attributes('-topmost', False)
+                error_duplicate_name = True
+        if not error_duplicate_name:
+            self.__backup_manager.copy_backup(backupvar, self.__name_entry.get())
+            self.__text_popup.destroy()
+            self.__text_popup_active = False
+            self.update_backups()
+
     def display(self):
         self.clear_all()
         self.display_header()
@@ -126,7 +148,8 @@ class Backup_GUI:
         for widget in self.__window.winfo_children():
             widget.destroy() # deleting widget
 
-    def backup_name_popup(self):
+    #name is the backup name that would be used for copying backups
+    def backup_name_popup(self, type, backup=None):
         if self.__server_manager.find_server(self.__name).get_status()=="closed":
             if not self.__text_popup_active:
                 self.__text_popup_active = True
@@ -135,7 +158,10 @@ class Backup_GUI:
                 l.place(x=5, y=5)
                 self.__name_entry = ttk.Entry(self.__text_popup)
                 self.__name_entry.place(x=5, y=40)
-                btn = tk.Button(self.__text_popup, text="Backup",command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
+                if type == "create":
+                    btn = tk.Button(self.__text_popup, text="Backup",command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
+                elif type == "copy":
+                    btn = tk.Button(self.__text_popup, text="Copy", command=partial(self.copy_backup, backup))
                 btn.place(x=5, y=80)
                 self.__text_popup.protocol("WM_DELETE_WINDOW", self.text_popup_close)
         else:
