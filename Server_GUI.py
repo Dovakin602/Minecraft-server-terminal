@@ -1,4 +1,5 @@
 import subprocess
+import threading
 import time
 from ttkbootstrap import Style
 import tkinter as tk
@@ -22,6 +23,7 @@ class Server_GUI:
         self.__ipAddr = Utils.get_ip()
 
         self.display()
+        self.__loading = False
 
     def config(self):
         self.__style.configure('TLabel', background='#050d42')
@@ -36,6 +38,11 @@ class Server_GUI:
         self.__root.geometry("700x400")
 
         self.__root.protocol("WM_DELETE_WINDOW", self.__main.shutdown)
+
+
+
+    def disable_event(self):
+        pass
 
     def display_ip(self):
         l = ttk.Label(self.__root, text=("ip address: " + self.__ipAddr), font=("Helvetica", 14, "bold"),style='info.Outline.TButton')

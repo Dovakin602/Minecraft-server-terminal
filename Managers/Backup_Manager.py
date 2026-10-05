@@ -57,7 +57,7 @@ class Backup_Manager:
         exists = os.path.exists(self.__metadata_file_path)
         if not exists:
             with open(self.__metadata_file_path, "w") as f:
-                json.dump([], f)
+                json.dump({"backups": [], "loaded_backups": {}}, f)
                 f.close()
 
         self.metadata_restoration_check()
@@ -126,8 +126,21 @@ class Backup_Manager:
                 if backup_file == name:
                     shutil.rmtree(file)
                     shutil.copytree(os.path.join(backup["backup_path"], backup_file), file)
+                    self.update_loaded_backup(server_name, backup_name)
                     print("loading world file "+name)
                     break
+
+    def update_loaded_backup(self, server, backup_name):
+        # load core metadata file
+        with open(self.__metadata_file_path, "r") as f:
+            original_data = json.load(f)
+            f.close()
+
+        # write back to the core metadata file with the new backups data added
+        original_data["loaded_backups"][server] = backup_name
+        with open(self.__metadata_file_path, "w") as f:
+            json.dump(original_data, f)
+            f.close()
 
     def copy_backup(self, backup, backup_name):
         backup_files = os.listdir(backup["backup_path"])
@@ -142,17 +155,20 @@ class Backup_Manager:
             data = json.load(f)
             f.close()
         backups=[]
-        for backup in data:
+        if name not in data["loaded_backups"]:
+            data["loaded_backups"][name] = None
+        for backup in data["backups"]:
             if backup["server"] == name:
                 backups.append({"name": backup["name"],"server": backup["server"], "backup_path": backup["backup_path"], "date_created": backup["date_created"]})
 
-        return backups
+
+        return backups, data["loaded_backups"][name]
 
     def find_backup(self, server_name, backup_name):
         with open(self.__metadata_file_path, "r") as f:
             data = json.load(f)
             f.close()
-        for backup in data:
+        for backup in data["backups"]:
             if backup["server"] == server_name and backup["name"] == backup_name:
                 return {"name": backup["name"], "backup_path": backup["backup_path"],
                                 "date_created": backup["date_created"]}
@@ -160,10 +176,10 @@ class Backup_Manager:
 
     def metadata_restoration_check(self):
         with open(self.__metadata_file_path, "r") as f:
-            core_data = json.load(f)
+            all_core_data = json.load(f)
             f.close()
 
-
+        core_data = all_core_data["backups"]
         sub_data=[]
         for root, dirs, files in os.walk(self.__core_backup_path):
             for file in files:
@@ -221,7 +237,7 @@ class Backup_Manager:
             f.close()
 
         # write back to the core metadata file with the new backups data added
-        original_data.append(data)
+        original_data["backups"].append(data)
         with open(self.__metadata_file_path, "w") as f:
             json.dump(original_data, f)
             f.close()

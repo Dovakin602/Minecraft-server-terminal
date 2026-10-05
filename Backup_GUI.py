@@ -3,6 +3,9 @@ import tkinter as tk
 from tkinter import ttk
 from ttkbootstrap import Style
 from functools import partial
+import time
+import threading
+
 
 class Backup_GUI:
     def __init__(self, server_manager, backup_manager, name, root):
@@ -10,14 +13,19 @@ class Backup_GUI:
         self.__backup_manager = backup_manager
         self.__name = name
         self.__root = root
-        self.__backup_data=backup_manager.load_server_backups_data(name)
+        self.__backup_data, self.__last_backup_loaded =backup_manager.load_server_backups_data(name)
 
         self.__style = Style(theme='superhero')
         self.__window = tk.Toplevel(root)
         self.__text_popup_active=False
 
+
+        self.__loading_text = "Loading..."
+
+
         self.config()
         self.display()
+
 
     def config(self):
 
@@ -34,13 +42,20 @@ class Backup_GUI:
         self.__window.geometry("500x500")
 
     def display_header(self):
-        frame = tk.Frame(self.__window, height=43, width=500, bg='#617ab0')
+        frame = tk.Frame(self.__window, height=65, width=500, bg='#617ab0')
         frame.place(x=0, y=0)
         if len(self.__name) > 20:
             name = self.__name[0:10]
             name = name + "..."
         else:
             name = self.__name
+        if not self.__last_backup_loaded:
+            text = "None"
+        else:
+            text = self.__last_backup_loaded
+        l = tk.Label(self.__window, text="last Backup Loaded: "+text, font=("Helvetica", 11, "bold"), bg='#617ab0')
+        l.place(x=5, y=40)
+
         l = tk.Label(self.__window, text=(name), font=("Helvetica", 14, "bold"), bg='#617ab0')
         l.place(x=5, y=5)
 
@@ -53,7 +68,7 @@ class Backup_GUI:
         if len(self.__backup_data) > 0:
             for i in range(len(self.__backup_data)):
                 frame = ttk.Frame(self.__window, height=43, width=600, style='secondary.Inverse.TLabel')
-                frame.place(x=0, y=(48 * i) + 38)
+                frame.place(x=0, y=(48 * i) + 70)
 
                 # name label
                 name=self.__backup_data[i]["name"];
@@ -61,31 +76,31 @@ class Backup_GUI:
                     name = name[0:10]
                     name = name + "..."
                 l = ttk.Label(self.__window, text=name, style="TLabel")
-                l.place(x=5, y=(48 * i) + 50)
+                l.place(x=5, y=(48 * i) + 80)
 
 
                 # date label
                 date = self.__backup_data[i]["date_created"][0:10]
                 l = ttk.Label(self.__window, text=date, style="TLabel")
-                l.place(x=40, y=(48 * i) + 50)
+                l.place(x=40, y=(48 * i) + 80)
 
                 #delete button
                 btn = ttk.Button(self.__window, text="Delete",
                                  command=partial(self.delete_backup, self.__name, self.__backup_data[i]["name"]),
                                  style='danger.Outline.TButton')
-                btn.place(x=400, y=(48 * i) + 50)
+                btn.place(x=400, y=(48 * i) + 80)
 
                 # load button
                 btn = ttk.Button(self.__window, text="Load",
                                  command=partial(self.load_backup, self.__name, self.__backup_data[i]["name"]),
                                  style='success.Outline.TButton')
-                btn.place(x=250, y=(48 * i) + 50)
+                btn.place(x=250, y=(48 * i) + 80)
 
                 # copy button
                 btn = ttk.Button(self.__window, text="Copy",
                                  command=partial(self.backup_name_popup, "copy", self.__backup_data[i]),
                                  style='info.Outline.TButton')
-                btn.place(x=325, y=(48 * i) + 50)
+                btn.place(x=325, y=(48 * i) + 80)
 
     def create_backup(self, paths, server_name, event=None):
         error_duplicate_name = False
@@ -98,6 +113,7 @@ class Backup_GUI:
                 self.__text_popup.attributes('-topmost', False)
                 error_duplicate_name = True
         if not error_duplicate_name:
+            self.__loading_text = "backing up..."
             self.__backup_manager.create_backup(paths, server_name, self.__name_entry.get())
             self.__text_popup.destroy()
             self.__text_popup_active = False
@@ -114,6 +130,7 @@ class Backup_GUI:
     def load_backup(self, server_name, backup_name):
         if tk.messagebox.askyesno("Confirm", "Are you sure you want to load the backup " + backup_name + "?"):
             self.__backup_manager.load_backup(server_name, backup_name)
+            self.update_backups()
 
         self.__window.attributes('-topmost', True)
         self.__window.attributes('-topmost', False)
@@ -140,7 +157,7 @@ class Backup_GUI:
         self.display_backups()
 
     def update_backups(self):
-        self.__backup_data = self.__backup_manager.load_server_backups_data(self.__name)
+        self.__backup_data, self.__last_backup_loaded = self.__backup_manager.load_server_backups_data(self.__name)
         self.display()
 
     def clear_all(self):
@@ -175,3 +192,6 @@ class Backup_GUI:
     def text_popup_close(self):
         self.__text_popup.destroy()
         self.__text_popup_active = False
+
+    def disable_event(self):
+        pass

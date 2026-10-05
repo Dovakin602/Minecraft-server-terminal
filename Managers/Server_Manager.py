@@ -7,21 +7,20 @@ from tkinter import messagebox
 class Server_Manager:
     def __init__(self):
         self.__Servers=[]
-        self.Find_server_files()
+        self.find_server_files()
 
         #resets error counter
         self.__normal_counter=0
         #ensures severs arent toggled to incorrect statueses
         self.__error_counter=0
 
-    def Find_server_files(self):
+    def find_server_files(self):
         if getattr(sys, 'frozen', False):
             # Running as an .exe
             dir_path = os.path.dirname(sys.executable)
         else:
             # Running as normal Python
             dir_path = os.getcwd()
-
 
         # locate all server.jar and velocity.jar files
         # and create a server instance for each one
