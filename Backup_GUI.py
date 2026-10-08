@@ -37,7 +37,7 @@ class Backup_GUI:
         self.__style.configure('danger.Outline.TButton', background='#31383F')
         self.__style.configure('info.Outline.TButton', background='#31383F')
 
-        self.__window.configure(background='#313d57')
+        self.__window.configure(background='#2b3e50')
         self.__window.title("Backups")
         self.__window.geometry("500x500")
 
@@ -171,6 +171,7 @@ class Backup_GUI:
             if not self.__text_popup_active:
                 self.__text_popup_active = True
                 self.__text_popup = tk.Toplevel(self.__window)
+                self.__text_popup.configure(background='#2b3e50')
                 l = tk.Label(self.__text_popup, text="Enter Backup Name", font=("Helvetica", 14, "bold"), bg='#617ab0')
                 l.place(x=5, y=5)
                 self.__name_entry = ttk.Entry(self.__text_popup)
@@ -179,10 +180,10 @@ class Backup_GUI:
 
 
                 if type == "create":
-                    btn = tk.Button(self.__text_popup, text="Backup",command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
+                    btn = tk.Button(self.__text_popup, text="Backup", command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
                     self.__name_entry.bind("<Return>", partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
                 elif type == "copy":
-                    btn = tk.Button(self.__text_popup, text="Copy", command=partial(self.copy_backup, backup))
+                    btn = tk.Button(self.__text_popup, text="Copy",  command=partial(self.copy_backup, backup))
                     self.__name_entry.bind("<Return>", partial(self.copy_backup, backup))
                 btn.place(x=5, y=80)
                 self.__text_popup.protocol("WM_DELETE_WINDOW", self.text_popup_close)
