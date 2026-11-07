@@ -99,10 +99,10 @@ class Backup_Manager:
         with open(self.__metadata_file_path, "r") as f:
             data = json.load(f)
             f.close()
-
-        for i in range(len(data)):
-            if data[i]["name"] == backup_name and data[i]["server"] == server_name:
-                backup = data.pop(i)
+        backups = data["backups"]
+        for i in range(len(backups)):
+            if backups[i]["name"] == backup_name and backups[i]["server"] == server_name:
+                backup = backups.pop(i)
                 break
 
         with open(self.__metadata_file_path, "w") as f:
@@ -110,8 +110,10 @@ class Backup_Manager:
             f.close()
 
         if backup:
-            if os.path.exists(backup["backup_path"]):
-                shutil.rmtree(backup["backup_path"])
+            server_path = backup["server"] + "_Backups"
+            backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"])
+            if os.path.exists(backup_path):
+                shutil.rmtree(backup_path)
             else:
                 print("The file does not exist")
 
@@ -125,7 +127,9 @@ class Backup_Manager:
                 name = ht[1]
                 if backup_file == name:
                     shutil.rmtree(file)
-                    shutil.copytree(os.path.join(backup["backup_path"], backup_file), file)
+                    server_path = backup["server"] + "_Backups"
+                    backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"])
+                    shutil.copytree(os.path.join(backup_path, backup_file), file)
                     self.update_loaded_backup(server_name, backup_name)
                     print("loading world file "+name)
                     break
@@ -143,11 +147,14 @@ class Backup_Manager:
             f.close()
 
     def copy_backup(self, backup, backup_name):
-        backup_files = os.listdir(backup["backup_path"])
+        server_path = backup["server"] + "_Backups"
+        backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"])
+        backup_files = os.listdir(backup_path)
         paths=[]
         for file in backup_files:
-            if file != "metadata.json":
-                paths.append(os.path.join(backup["backup_path"], file))
+            if file != "metadata-sdBackups.json":
+
+                paths.append(os.path.join(backup_path, file))
         self.create_backup(paths, backup["server"], backup_name)
 
     def load_server_backups_data(self, name):
@@ -159,7 +166,7 @@ class Backup_Manager:
             data["loaded_backups"][name] = None
         for backup in data["backups"]:
             if backup["server"] == name:
-                backups.append({"name": backup["name"],"server": backup["server"], "backup_path": backup["backup_path"], "date_created": backup["date_created"]})
+                backups.append({"name": backup["name"],"server": backup["server"], "date_created": backup["date_created"]})
 
 
         return backups, data["loaded_backups"][name]
@@ -170,7 +177,7 @@ class Backup_Manager:
             f.close()
         for backup in data["backups"]:
             if backup["server"] == server_name and backup["name"] == backup_name:
-                return {"name": backup["name"], "backup_path": backup["backup_path"],
+                return {"name": backup["name"],
                                 "date_created": backup["date_created"]}
         return None
 
@@ -183,7 +190,7 @@ class Backup_Manager:
         sub_data=[]
         for root, dirs, files in os.walk(self.__core_backup_path):
             for file in files:
-                if file == "metadata.json":
+                if file == "metadata-sdBackups.json":
                     with open(os.path.join(root, file), "r") as f:
                         data = json.load(f)
                         f.close()
@@ -197,12 +204,14 @@ class Backup_Manager:
 
         #remove core metadata about files that no longer exist
         for c in core_data:
-            if not os.path.exists(c["backup_path"]):
+            server_path = c["server"]+"_Backups"
+            backup_path = os.path.join(self.__core_backup_path, server_path, c["name"])
+            if not os.path.exists(backup_path):
                 with open(self.__metadata_file_path, "r") as f:
                     data = json.load(f)
                     f.close()
-
-                data.remove(c)
+                #print(data)
+                #data.pop(c)
 
                 with open(self.__metadata_file_path, "w") as f:
                     json.dump(data, f)
@@ -216,7 +225,6 @@ class Backup_Manager:
                 if c["name"] == s["name"] and c["server"] == s["server"]:
                     found = True
             if not found:
-                print("missing core data")
                 self.append_core_metadata(s)
 
         #check to find any missing sub metadat files
@@ -227,8 +235,10 @@ class Backup_Manager:
                     found = True
             if not found:
                 print("missing sub data")
-                if os.path.exists(s["backup_path"]):
-                    self.create_sub_metadata(c, c["backup_path"])
+                server_path = c["server"] + "_Backups"
+                backup_path = os.path.join(self.__core_backup_path, server_path, c["name"])
+                if os.path.exists(backup_path):
+                    self.create_sub_metadata(c,backup_path)
 
     def append_core_metadata(self, data):
         # load core metadata file
@@ -244,7 +254,7 @@ class Backup_Manager:
 
     def create_sub_metadata(self, data, path):
         # create the sub metadatafile in final backup path
-        with open(os.path.join(path, "metadata.json"), "w") as f:
+        with open(os.path.join(path, "metadata-sdBackups.json"), "w") as f:
             json.dump(data, f)
             f.close()
 
