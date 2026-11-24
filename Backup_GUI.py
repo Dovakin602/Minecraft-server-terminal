@@ -1,10 +1,11 @@
-
+import math
 import tkinter as tk
 from tkinter import ttk
 from ttkbootstrap import Style
 from functools import partial
 import time
 import threading
+import textwrap
 
 
 class Backup_GUI:
@@ -13,19 +14,19 @@ class Backup_GUI:
         self.__backup_manager = backup_manager
         self.__name = name
         self.__root = root
-        self.__backup_data, self.__last_backup_loaded =backup_manager.load_server_backups_data(name)
+        self.__backup_data, self.__last_backup_loaded = backup_manager.load_server_backups_data(name)
 
         self.__style = Style(theme='superhero')
         self.__window = tk.Toplevel(root)
-        self.__text_popup_active=False
 
+        # this varible is used to detect if the backup code is running
+        self.__text_popup_active = False
 
         self.__loading_text = "Loading..."
-
+        self.__info_popups = []
 
         self.config()
         self.display()
-
 
     def config(self):
 
@@ -53,7 +54,7 @@ class Backup_GUI:
             text = "None"
         else:
             text = self.__last_backup_loaded
-        l = tk.Label(self.__window, text="last Backup Loaded: "+text, font=("Helvetica", 11, "bold"), bg='#617ab0')
+        l = tk.Label(self.__window, text="last Backup Loaded: " + text, font=("Helvetica", 11, "bold"), bg='#617ab0')
         l.place(x=5, y=40)
 
         l = tk.Label(self.__window, text=(name), font=("Helvetica", 14, "bold"), bg='#617ab0')
@@ -64,6 +65,36 @@ class Backup_GUI:
                          style='Info.Outline.TButton')
         btn.place(x=400, y=5)
 
+    def Create_info_display(self, title, message):
+        InfoPopup = tk.Toplevel(self.__window)
+        InfoPopup.configure(background='#2b3e50')
+        InfoPopup.geometry("300x200")
+        InfoPopup.title(title)
+
+        custom_font = tk.font.Font(family="Arial", size=18)
+
+        # Wrap text at word boundaries
+        message = textwrap.fill(message, width=22)
+
+        label = tk.Label(
+            InfoPopup,
+            text=message,
+            bg='#617ab0',
+            font=custom_font,
+            wraplength=270,
+            justify=tk.CENTER
+        )
+        label.pack(expand=True, fill=tk.BOTH, padx=10, pady=10)
+
+        self.__info_popups.append(InfoPopup)
+
+    def Destroy_info_display(self):
+        for info_popup in self.__info_popups:
+            try:
+                info_popup.destroy()
+            except:
+                pass
+
     def display_backups(self):
         if len(self.__backup_data) > 0:
             for i in range(len(self.__backup_data)):
@@ -71,20 +102,19 @@ class Backup_GUI:
                 frame.place(x=0, y=(48 * i) + 70)
 
                 # name label
-                name=self.__backup_data[i]["name"];
+                name = self.__backup_data[i]["name"];
                 if len(name) > 20:
                     name = name[0:10]
                     name = name + "..."
                 l = ttk.Label(self.__window, text=name, style="TLabel")
                 l.place(x=5, y=(48 * i) + 80)
 
-
                 # date label
                 date = self.__backup_data[i]["date_created"][0:10]
                 l = ttk.Label(self.__window, text=date, style="TLabel")
                 l.place(x=40, y=(48 * i) + 80)
 
-                #delete button
+                # delete button
                 btn = ttk.Button(self.__window, text="Delete",
                                  command=partial(self.delete_backup, self.__name, self.__backup_data[i]["name"]),
                                  style='danger.Outline.TButton')
@@ -102,35 +132,80 @@ class Backup_GUI:
                                  style='info.Outline.TButton')
                 btn.place(x=325, y=(48 * i) + 80)
 
+    # this will check for when the backup is made and run nessery commands
+    def backup_made(self):
+        loop = True
+        while loop:
+            time.sleep(0.5)
+            # if it is no longer making a backup
+            if self.__backup_manager.get_backup_status()[0] == False:
+                # this varible is sued to detect if the backup code is running
+                self.__text_popup_active = False
+                # update display and stop the loop meaning the thread dies
+                self.update_backups()
+                self.Destroy_info_display()
+                self.Create_info_display("Backup Created", "the backup has been successfully created")
+                loop = False
+
     def create_backup(self, paths, server_name, event=None):
         error_duplicate_name = False
+        # make sure no duplicate names appear
         for backup in self.__backup_data:
             if backup["name"].lower() == self.__name_entry.get().lower():
                 tk.messagebox.showwarning("Warning", "A Backup with this name already exists", master=self.__text_popup)
+                # move all the screens to the top again in the right order
                 self.__window.attributes('-topmost', True)
                 self.__window.attributes('-topmost', False)
                 self.__text_popup.attributes('-topmost', True)
                 self.__text_popup.attributes('-topmost', False)
                 error_duplicate_name = True
         if not error_duplicate_name:
-            self.__loading_text = "backing up..."
-            self.__backup_manager.create_backup(paths, server_name, self.__name_entry.get())
+            self.Create_info_display("Loading", "please be patient backup is being made")
+            name = self.__name_entry.get()
+
             self.__text_popup.destroy()
-            self.__text_popup_active = False
-            self.update_backups()
+            # start thread for creating a backup
+            t = threading.Thread(target=self.__backup_manager.create_backup, args=(paths, server_name, name))
+            t.start()
+            # this will check for when the backup is made and run nessery commands
+            time.sleep(0.1)
+            t2 = threading.Thread(target=self.backup_made)
+            t2.start()
 
     def delete_backup(self, server_name, backup_name):
-        if tk.messagebox.askyesno("Confirm", "Are you sure you want to delete the backup "+backup_name+"?"):
+        if tk.messagebox.askyesno("Confirm", "Are you sure you want to delete the backup " + backup_name + "?"):
             self.__backup_manager.delete_backup(server_name, backup_name)
             self.update_backups()
 
         self.__window.attributes('-topmost', True)
         self.__window.attributes('-topmost', False)
 
+    def loading_complete(self):
+        loop = True
+        while loop:
+            time.sleep(0.5)
+            # if it is no longer making a backup
+            if self.__backup_manager.get_loading_status()[0] == False:
+
+                # update display and stop the loop meaning the thread dies
+                self.update_backups()
+                self.Destroy_info_display()
+                self.Create_info_display("Loaded Backup", "Backup has been successfully loaded")
+                self.__window.attributes('-topmost', True)
+                self.__window.attributes('-topmost', False)
+                loop = False
+
     def load_backup(self, server_name, backup_name):
         if tk.messagebox.askyesno("Confirm", "Are you sure you want to load the backup " + backup_name + "?"):
-            self.__backup_manager.load_backup(server_name, backup_name)
-            self.update_backups()
+            #self.__backup_manager.load_backup(server_name, backup_name)
+            self.Create_info_display("started loading", "backup is being loaded this may take time")
+            t = threading.Thread(target=self.__backup_manager.load_backup, args=(server_name, backup_name))
+            t.start()
+            # this will check for when the backup is made and run nessery commands
+            time.sleep(0.1)
+            t2 = threading.Thread(target=self.loading_complete)
+            t2.start()
+
 
         self.__window.attributes('-topmost', True)
         self.__window.attributes('-topmost', False)
@@ -163,11 +238,13 @@ class Backup_GUI:
     def clear_all(self):
         # Iterate through every widget inside the frame
         for widget in self.__window.winfo_children():
-            widget.destroy() # deleting widget
+            widget.destroy()  # deleting widget
 
-    #name is the backup name that would be used for copying backups
+    # name is the backup name that would be used for copying or creating backups
     def backup_name_popup(self, type, backup=None):
-        if self.__server_manager.find_server(self.__name).get_status()=="closed":
+        # make sure server is no longer running
+        if self.__server_manager.find_server(self.__name).get_status() == "closed":
+            # make sure another backup isnt already running
             if not self.__text_popup_active:
                 self.__text_popup_active = True
                 self.__text_popup = tk.Toplevel(self.__window)
@@ -178,12 +255,15 @@ class Backup_GUI:
                 self.__name_entry.place(x=5, y=40)
                 self.__name_entry.focus()
 
-
                 if type == "create":
-                    btn = tk.Button(self.__text_popup, text="Backup", command=partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
-                    self.__name_entry.bind("<Return>", partial(self.create_backup,self.__server_manager.get_world_files(self.__name), self.__name))
+                    btn = tk.Button(self.__text_popup, text="Backup", command=partial(self.create_backup,
+                                                                                      self.__server_manager.get_world_files(
+                                                                                          self.__name), self.__name))
+                    self.__name_entry.bind("<Return>", partial(self.create_backup,
+                                                               self.__server_manager.get_world_files(self.__name),
+                                                               self.__name))
                 elif type == "copy":
-                    btn = tk.Button(self.__text_popup, text="Copy",  command=partial(self.copy_backup, backup))
+                    btn = tk.Button(self.__text_popup, text="Copy", command=partial(self.copy_backup, backup))
                     self.__name_entry.bind("<Return>", partial(self.copy_backup, backup))
                 btn.place(x=5, y=80)
                 self.__text_popup.protocol("WM_DELETE_WINDOW", self.text_popup_close)
