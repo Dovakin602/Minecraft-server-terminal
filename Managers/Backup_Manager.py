@@ -12,9 +12,6 @@ class Backup_Manager:
         self.__server_manager = server_manager
         self.__core_backup_path=None
         self.__metadata_file_path=None
-        self.__makeing_backup=[False, None]
-        self.__loading_backup=[False, None]
-        self.__copy_backup=[False, None]
         self.setup()
 
     #currently redundent
@@ -75,12 +72,6 @@ class Backup_Manager:
                            os.path.relpath(os.path.join(root, file),
                                            os.path.join(path, '..')))
 
-    def get_backup_status(self):
-        return self.__makeing_backup
-
-    def get_loading_status(self):
-        return self.__loading_backup
-
     def create_backup(self, paths, server_name, backup_name, zip=True):
         self.__makeing_backup = [True, server_name]
         folder_name = server_name+"_Backups"
@@ -91,9 +82,9 @@ class Backup_Manager:
                 os.mkdir(sever_backups_path)
                 print(f"Directory Backups created successfully.")
             except PermissionError:
-                print(f"Permission denied: Unable to create Backups.")
+                return [False, "Permission denied: Unable to create Backups."]
             except Exception as e:
-                print(f"An error occurred: {e}")
+                return [False, e]
         if zip:
             final_backup_path = os.path.join(sever_backups_path, backup_name+ ".zip")
             zipf = zipfile.ZipFile(final_backup_path, 'w', zipfile.ZIP_DEFLATED)
@@ -123,7 +114,7 @@ class Backup_Manager:
         self.create_sub_metadata(data, final_backup_path)
 
         self.append_core_metadata(data)
-        self.__makeing_backup = [False, server_name]
+        return [True]
 
     def delete_backup(self, server_name, backup_name):
         #open core metadata
@@ -132,6 +123,7 @@ class Backup_Manager:
             f.close()
         backups = data["backups"]
 
+        backup = None
         #find the backup metadat in core and remove it
         for i in range(len(backups)):
             if backups[i]["name"] == backup_name and backups[i]["server"] == server_name:
@@ -156,64 +148,73 @@ class Backup_Manager:
                 else:
                     shutil.rmtree(backup_path)
             else:
-                print("The file does not exist")
+                return [False, "backup files do not exist"]
+
+            return [True]
+        else:
+            return [False, "backup does not exist"]
 
     def load_backup(self, server_name, backup_name):
         self.__loading_backup = [True, server_name]
         backup = self.find_backup(server_name, backup_name)
-        server_path = backup["server"] + "_Backups"
-        world_files = self.__server_manager.get_world_files(server_name)
-        zipped = False
-        if os.path.splitext(backup["backup_path"])[1] == ".zip":
-            zipped = True
-        #if backup files are zipped
-        if zipped:
-            #creatrate temp folder
-            temp_folder = os.path.join(self.__core_backup_path, "Temp")
-            try:
-                os.mkdir(temp_folder)
-            except:
-                #if the temp folder already exists delete it and remake it
+        if backup:
+            server_path = backup["server"] + "_Backups"
+            world_files = self.__server_manager.get_world_files(server_name)
+            zipped = False
+            if os.path.splitext(backup["backup_path"])[1] == ".zip":
+                zipped = True
+            #if backup files are zipped
+            if zipped:
+                #creatrate temp folder
+                temp_folder = os.path.join(self.__core_backup_path, "Temp")
+                try:
+                    os.mkdir(temp_folder)
+                except:
+                    #if the temp folder already exists delete it and remake it
+                    shutil.rmtree(temp_folder)
+                    os.mkdir(temp_folder)
+                print(f"made temp folder")
+                #extract the zip backup into the temp folder
+                backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"] + ".zip")
+                with zipfile.ZipFile(backup_path, "r") as zip_ref:
+                    zip_ref.extractall(path=temp_folder)
+                zip_ref.close()
+                backup_folders = os.listdir(temp_folder)
+                backup_path = temp_folder
+
+            #if backup not zip then just use the normal folder for coppy refrence
+            else:
+                backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"])
+                backup_folders = os.listdir(backup_path)
+                #the loaction of the backups
+
+
+            #loop through the active world files
+            for folder in world_files:
+                #loop throught he backup world files
+                for backup_folder in backup_folders:
+                    ht = os.path.split(folder)
+                    name = ht[1]
+                    #if the backup folder and active folder have the same name
+                    #then override the active folder with the backup files
+                    if backup_folder == name:
+                        #delete active world folder
+                        shutil.rmtree(folder)
+
+                        #copy the backup world files to where to active files were
+                        shutil.copytree(os.path.join(backup_path, backup_folder), folder)
+                        self.update_loaded_backup(server_name, backup_name)
+                        print("loading world file "+name)
+                        break
+
+            #delete the temp folder
+            if zipped:
                 shutil.rmtree(temp_folder)
-                os.mkdir(temp_folder)
-            print(f"made temp folder")
-            #extract the zip backup into the temp folder
-            backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"] + ".zip")
-            with zipfile.ZipFile(backup_path, "r") as zip_ref:
-                zip_ref.extractall(path=temp_folder)
-            zip_ref.close()
-            backup_folders = os.listdir(temp_folder)
-            backup_path = temp_folder
 
-        #if backup not zip then just use the normal folder for coppy refrence
+            return [True]
+
         else:
-            backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"])
-            backup_folders = os.listdir(backup_path)
-            #the loaction of the backups
-
-
-        #loop through the active world files
-        for folder in world_files:
-            #loop throught he backup world files
-            for backup_folder in backup_folders:
-                ht = os.path.split(folder)
-                name = ht[1]
-                #if the backup folder and active folder have the same name
-                #then override the active folder with the backup files
-                if backup_folder == name:
-                    #delete active world folder
-                    shutil.rmtree(folder)
-
-                    #copy the backup world files to where to active files were
-                    shutil.copytree(os.path.join(backup_path, backup_folder), folder)
-                    self.update_loaded_backup(server_name, backup_name)
-                    print("loading world file "+name)
-                    break
-
-        #delete the temp folder
-        if zipped:
-            shutil.rmtree(temp_folder)
-        self.__loading_backup = [False, None]
+            return [False, "backup does not exist"]
 
     def update_loaded_backup(self, server, backup_name):
         # load core metadata file
@@ -230,33 +231,43 @@ class Backup_Manager:
     def copy_backup(self, backup, backup_name):
         server_path = backup["server"] + "_Backups"
         backup = self.find_backup(backup["server"], backup["name"])
-        if os.path.splitext(backup["backup_path"])[1] == ".zip":
+        if backup:
+            if os.path.splitext(backup["backup_path"])[1] == ".zip":
 
-            temp_folder = os.path.join(self.__core_backup_path, "Temp")
-            try:
-                os.mkdir(temp_folder)
-            except:
-                # if the temp folder already exists delete it and remake it
+                temp_folder = os.path.join(self.__core_backup_path, "Temp")
+                try:
+                    os.mkdir(temp_folder)
+                except:
+                    # if the temp folder already exists delete it and remake it
+                    shutil.rmtree(temp_folder)
+                    os.mkdir(temp_folder)
+                print(f"made temp folder")
+                # extract the zip backup into the temp folder
+                backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"] + ".zip")
+                with zipfile.ZipFile(backup_path, "r") as zip_ref:
+                    zip_ref.extractall(path=temp_folder)
+                zip_ref.close()
+                backup_path = temp_folder
+
+            else:
+                backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"])
+
+            backup_files = os.listdir(backup_path)
+            paths=[]
+            for file in backup_files:
+                if file != "metadata-sdBackups.json":
+
+                    paths.append(os.path.join(backup_path, file))
+            self.create_backup(paths, backup["server"], backup_name)
+
+            # delete the temp folder
+            if os.path.splitext(backup["backup_path"])[1] == ".zip":
                 shutil.rmtree(temp_folder)
-                os.mkdir(temp_folder)
-            print(f"made temp folder")
-            # extract the zip backup into the temp folder
-            backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"] + ".zip")
-            with zipfile.ZipFile(backup_path, "r") as zip_ref:
-                zip_ref.extractall(path=temp_folder)
-            zip_ref.close()
-            backup_path = temp_folder
+
+            return [True]
 
         else:
-            backup_path = os.path.join(self.__core_backup_path, server_path, backup["name"])
-
-        backup_files = os.listdir(backup_path)
-        paths=[]
-        for file in backup_files:
-            if file != "metadata-sdBackups.json":
-
-                paths.append(os.path.join(backup_path, file))
-        self.create_backup(paths, backup["server"], backup_name)
+            return [False, "backup does not exist"]
 
     def load_server_backups_data(self, name):
         with open(self.__metadata_file_path, "r") as f:

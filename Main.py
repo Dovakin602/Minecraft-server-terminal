@@ -3,6 +3,7 @@ import sys
 import Server_GUI
 import Managers.Server_Manager
 import Managers.Backup_Manager
+import Managers.Backup_threads_Manager
 import threading
 import time
 import os
@@ -11,6 +12,7 @@ class main:
     def __init__(self):
         self.__server_manager = Managers.Server_Manager.Server_Manager()
         self.__backup_manager = Managers.Backup_Manager.Backup_Manager(self.__server_manager)
+        self.__backup_thread_manager = Managers.Backup_threads_Manager.Backup_Threads_Manager(self.__server_manager, self.__backup_manager)
         self.__terminal = Server_GUI.Server_GUI(self.__server_manager, self)
         self.__root = self.__terminal.get_root()
         self.__kill_thread = False
@@ -39,6 +41,9 @@ class main:
 
     def get_server_manager(self):
         return self.__server_manager
+
+    def get_backup_thread_manager(self):
+        return self.__backup_thread_manager
 
     def get_root(self):
         return self.__root

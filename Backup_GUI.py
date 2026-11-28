@@ -3,15 +3,17 @@ import tkinter as tk
 from tkinter import ttk
 from ttkbootstrap import Style
 from functools import partial
+import Managers
 import time
 import threading
 import textwrap
 
 
 class Backup_GUI:
-    def __init__(self, server_manager, backup_manager, name, root):
+    def __init__(self, server_manager, backup_manager, backup_thread_manager, name, root):
         self.__server_manager = server_manager
         self.__backup_manager = backup_manager
+        self.__backup_thread_manager = backup_thread_manager
         self.__name = name
         self.__root = root
         self.__backup_data, self.__last_backup_loaded = backup_manager.load_server_backups_data(name)
@@ -134,18 +136,12 @@ class Backup_GUI:
 
     # this will check for when the backup is made and run nessery commands
     def backup_made(self):
-        loop = True
-        while loop:
-            time.sleep(0.5)
-            # if it is no longer making a backup
-            if self.__backup_manager.get_backup_status()[0] == False:
-                # this varible is sued to detect if the backup code is running
-                self.__text_popup_active = False
-                # update display and stop the loop meaning the thread dies
-                self.update_backups()
-                self.Destroy_info_display()
-                self.Create_info_display("Backup Created", "the backup has been successfully created")
-                loop = False
+        # this varible is sued to detect if the backup code is running
+        self.__text_popup_active = False
+        # update display and stop the loop meaning the thread dies
+        self.update_backups()
+        self.Destroy_info_display()
+        self.Create_info_display("Backup Created", "the backup has been successfully created")
 
     def create_backup(self, paths, server_name, event=None):
         error_duplicate_name = False
@@ -161,54 +157,59 @@ class Backup_GUI:
                 error_duplicate_name = True
         if not error_duplicate_name:
             self.Create_info_display("Loading", "please be patient backup is being made")
-            name = self.__name_entry.get()
+            backup_name = self.__name_entry.get()
 
             self.__text_popup.destroy()
-            # start thread for creating a backup
-            t = threading.Thread(target=self.__backup_manager.create_backup, args=(paths, server_name, name))
-            t.start()
-            # this will check for when the backup is made and run nessery commands
-            time.sleep(0.1)
-            t2 = threading.Thread(target=self.backup_made)
-            t2.start()
+            self.__text_popup_active = False
+
+            self.__backup_thread_manager.add_new_task(self.__name, ["create", [paths, server_name, backup_name, self]])
+            # # start thread for creating a backup
+            # t = threading.Thread(target=self.__backup_manager.create_backup, args=(paths, server_name, name))
+            # t.start()
+            # # this will check for when the backup is made and run nessery commands
+            # time.sleep(0.1)
+            # t2 = threading.Thread(target=self.backup_made)
+            # t2.start()
+
+
 
     def delete_backup(self, server_name, backup_name):
         if tk.messagebox.askyesno("Confirm", "Are you sure you want to delete the backup " + backup_name + "?"):
-            self.__backup_manager.delete_backup(server_name, backup_name)
-            self.update_backups()
+            self.__backup_thread_manager.add_new_task(self.__name, ["delete", [server_name, backup_name, self]])
+            #self.__backup_manager.delete_backup(server_name, backup_name)
+            #self.update_backups()
 
         self.__window.attributes('-topmost', True)
         self.__window.attributes('-topmost', False)
 
     def loading_complete(self):
-        loop = True
-        while loop:
-            time.sleep(0.5)
-            # if it is no longer making a backup
-            if self.__backup_manager.get_loading_status()[0] == False:
-
-                # update display and stop the loop meaning the thread dies
-                self.update_backups()
-                self.Destroy_info_display()
-                self.Create_info_display("Loaded Backup", "Backup has been successfully loaded")
-                self.__window.attributes('-topmost', True)
-                self.__window.attributes('-topmost', False)
-                loop = False
+        # update display and stop the loop meaning the thread dies
+        self.update_backups()
+        self.Destroy_info_display()
+        self.Create_info_display("Loaded Backup", "Backup has been successfully loaded")
+        self.__window.attributes('-topmost', True)
+        self.__window.attributes('-topmost', False)
 
     def load_backup(self, server_name, backup_name):
         if tk.messagebox.askyesno("Confirm", "Are you sure you want to load the backup " + backup_name + "?"):
             #self.__backup_manager.load_backup(server_name, backup_name)
             self.Create_info_display("started loading", "backup is being loaded this may take time")
-            t = threading.Thread(target=self.__backup_manager.load_backup, args=(server_name, backup_name))
-            t.start()
-            # this will check for when the backup is made and run nessery commands
-            time.sleep(0.1)
-            t2 = threading.Thread(target=self.loading_complete)
-            t2.start()
+
+            self.__backup_thread_manager.add_new_task(self.__name, ["load", [server_name, backup_name, self]])
+
+            # t = threading.Thread(target=self.__backup_manager.load_backup, args=(server_name, backup_name))
+            # t.start()
+            # # this will check for when the backup is made and run nessery commands
+            # time.sleep(0.1)
+            # t2 = threading.Thread(target=self.loading_complete)
+            # t2.start()
 
 
         self.__window.attributes('-topmost', True)
         self.__window.attributes('-topmost', False)
+
+    def copy_complete(self):
+        pass
 
     def copy_backup(self, backupvar, event=None):
         error_duplicate_name = False
@@ -221,10 +222,14 @@ class Backup_GUI:
                 self.__text_popup.attributes('-topmost', False)
                 error_duplicate_name = True
         if not error_duplicate_name:
-            self.__backup_manager.copy_backup(backupvar, self.__name_entry.get())
+            backup_name = self.__name_entry.get()
+
             self.__text_popup.destroy()
+            self.__backup_thread_manager.add_new_task(self.__name, ["copy", [backupvar, backup_name, self]])
+            #self.__backup_manager.copy_backup(backupvar, self.__name_entry.get())
+
             self.__text_popup_active = False
-            self.update_backups()
+            #self.update_backups()
 
     def display(self):
         self.clear_all()
